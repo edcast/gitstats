@@ -648,8 +648,6 @@ class GitDataCollector(DataCollector):
 			self.authors[author]['active_days_in_last_60_days'] = list(self.authors[author]['active_days_in_last_60_days'])
 			self.authors[author]['active_days_in_last_90_days'] = list(self.authors[author]['active_days_in_last_90_days'])
 			self.authors[author]['active_days'] = list(self.authors[author]['active_days'])
-		# print(self.authors)
-		# print(json.dumps(self.authors, indent = 4))
 
 	def refine(self):
 		# authors
@@ -1029,6 +1027,7 @@ class HTMLReportCreator(ReportCreator):
 					commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
 					temp = {}
 					temp['author'] = author
+					temp['repo'] = self.title
 					temp['lines_added'] = data.changes_by_date_by_author[stamp][author]['lines_added']
 					temp['commits'] = data.changes_by_date_by_author[stamp][author]['commits']
 					temp['date'] = datetime.datetime.fromtimestamp(float(stamp)).strftime('%Y-%m-%d')
@@ -1039,7 +1038,10 @@ class HTMLReportCreator(ReportCreator):
 			fgc.write('\n')
 		fgl.close()
 		fgc.close()
-		print(data_by_author)
+
+		# push these two datasets
+		# print(json.dumps(data_by_author[0], indent = 4))
+		# print(data.authors)
 
 		# Authors :: Author of Month
 		f.write(html_header(2, 'Author of Month'))
