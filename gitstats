@@ -682,7 +682,7 @@ class GitDataCollector(DataCollector):
 		return self.authors[author]
 
 	def getAuthors(self, limit = None):
-		res = getkeyssortedbyvaluekey(self.authors, 'commits')
+		res = getkeyssortedbyvaluekey(self.authors, 'last_commit_stamp')
 		res.reverse()
 		return res[:limit]
 
