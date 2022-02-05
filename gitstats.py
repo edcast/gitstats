@@ -631,12 +631,14 @@ class GitDataCollector(DataCollector):
 						self.authors[author]['commits'] = self.authors[author].get('commits', 0) + 1
 						self.authors[author]['lines_added'] = self.authors[author].get('lines_added', 0) + inserted
 						self.authors[author]['lines_removed'] = self.authors[author].get('lines_removed', 0) + deleted
-						if stamp not in self.changes_by_date_by_author:
-							self.changes_by_date_by_author[stamp] = {}
-						if author not in self.changes_by_date_by_author[stamp]:
-							self.changes_by_date_by_author[stamp][author] = {}
-						self.changes_by_date_by_author[stamp][author]['lines_added'] = self.authors[author]['lines_added']
-						self.changes_by_date_by_author[stamp][author]['commits'] = self.authors[author]['commits']
+						day_timestamp = datetime.datetime.fromtimestamp(float(stamp)).strftime('%Y-%m-%d')
+						if day_timestamp not in self.changes_by_date_by_author:
+							self.changes_by_date_by_author[day_timestamp] = {}
+						if author not in self.changes_by_date_by_author[day_timestamp]:
+							self.changes_by_date_by_author[day_timestamp][author] = {'lines_added' : 0, 'lines_removed' : 0, 'commits' : 0}
+						self.changes_by_date_by_author[day_timestamp][author]['lines_added'] += inserted
+						self.changes_by_date_by_author[day_timestamp][author]['lines_removed'] += deleted
+						self.changes_by_date_by_author[day_timestamp][author]['commits'] += 1
 						files, inserted, deleted = 0, 0, 0
 					except ValueError:
 						print('Warning: unexpected line "%s"' % line)
@@ -1027,18 +1029,19 @@ class HTMLReportCreator(ReportCreator):
 			lines_by_authors[author] = 0
 			commits_by_authors[author] = 0
 		for stamp in sorted(data.changes_by_date_by_author.keys()):
-			fgl.write('%d' % stamp)
-			fgc.write('%d' % stamp)
+			fgl.write('%s' % stamp)
+			fgc.write('%s' % stamp)
 			for author in self.authors_to_plot:
 				if author in list(data.changes_by_date_by_author[stamp].keys()):
-					lines_by_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
-					commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
+					lines_by_authors[author] += data.changes_by_date_by_author[stamp][author]['lines_added']
+					commits_by_authors[author] += data.changes_by_date_by_author[stamp][author]['commits']
 					temp = {}
 					temp['author'] = author
 					temp['repo'] = self.title
 					temp['lines_added'] = data.changes_by_date_by_author[stamp][author]['lines_added']
+					temp['lines_removed'] = data.changes_by_date_by_author[stamp][author]['lines_removed']
 					temp['commits'] = data.changes_by_date_by_author[stamp][author]['commits']
-					temp['date'] = datetime.datetime.fromtimestamp(float(stamp)).strftime('%Y-%m-%d')
+					temp['date'] = stamp
 					data_by_author.append(temp)
 				fgl.write(' %d' % lines_by_authors[author])
 				fgc.write(' %d' % commits_by_authors[author])
