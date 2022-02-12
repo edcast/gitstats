@@ -14,6 +14,8 @@ import sys
 import time
 import zlib
 import json
+import requests
+from domo_helper import *
 
 if sys.version_info < (2, 6):
 	print("Python 2.6 or higher is required for gitstats", file=sys.stderr)
@@ -26,6 +28,12 @@ os.environ['LC_ALL'] = 'C'
 GNUPLOT_COMMON = 'set terminal png transparent size 640,240\nset size 1.0,1.0\n'
 ON_LINUX = (platform.system() == 'Linux')
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+
+DOMO_DETAILS = {
+	"client_id": "use_your_domo_client_id",
+	"client_secret": "use_your_domo_client_secret",
+	"api_host": "api.domo.com"
+}
 
 exectime_internal = 0.0
 exectime_external = 0.0
@@ -623,12 +631,14 @@ class GitDataCollector(DataCollector):
 						self.authors[author]['commits'] = self.authors[author].get('commits', 0) + 1
 						self.authors[author]['lines_added'] = self.authors[author].get('lines_added', 0) + inserted
 						self.authors[author]['lines_removed'] = self.authors[author].get('lines_removed', 0) + deleted
-						if stamp not in self.changes_by_date_by_author:
-							self.changes_by_date_by_author[stamp] = {}
-						if author not in self.changes_by_date_by_author[stamp]:
-							self.changes_by_date_by_author[stamp][author] = {}
-						self.changes_by_date_by_author[stamp][author]['lines_added'] = self.authors[author]['lines_added']
-						self.changes_by_date_by_author[stamp][author]['commits'] = self.authors[author]['commits']
+						day_timestamp = datetime.datetime.fromtimestamp(float(stamp)).strftime('%Y-%m-%d')
+						if day_timestamp not in self.changes_by_date_by_author:
+							self.changes_by_date_by_author[day_timestamp] = {}
+						if author not in self.changes_by_date_by_author[day_timestamp]:
+							self.changes_by_date_by_author[day_timestamp][author] = {'lines_added' : 0, 'lines_removed' : 0, 'commits' : 0}
+						self.changes_by_date_by_author[day_timestamp][author]['lines_added'] += inserted
+						self.changes_by_date_by_author[day_timestamp][author]['lines_removed'] += deleted
+						self.changes_by_date_by_author[day_timestamp][author]['commits'] += 1
 						files, inserted, deleted = 0, 0, 0
 					except ValueError:
 						print('Warning: unexpected line "%s"' % line)
@@ -1019,18 +1029,19 @@ class HTMLReportCreator(ReportCreator):
 			lines_by_authors[author] = 0
 			commits_by_authors[author] = 0
 		for stamp in sorted(data.changes_by_date_by_author.keys()):
-			fgl.write('%d' % stamp)
-			fgc.write('%d' % stamp)
+			fgl.write('%s' % stamp)
+			fgc.write('%s' % stamp)
 			for author in self.authors_to_plot:
 				if author in list(data.changes_by_date_by_author[stamp].keys()):
-					lines_by_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
-					commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
+					lines_by_authors[author] += data.changes_by_date_by_author[stamp][author]['lines_added']
+					commits_by_authors[author] += data.changes_by_date_by_author[stamp][author]['commits']
 					temp = {}
 					temp['author'] = author
 					temp['repo'] = self.title
 					temp['lines_added'] = data.changes_by_date_by_author[stamp][author]['lines_added']
+					temp['lines_removed'] = data.changes_by_date_by_author[stamp][author]['lines_removed']
 					temp['commits'] = data.changes_by_date_by_author[stamp][author]['commits']
-					temp['date'] = datetime.datetime.fromtimestamp(float(stamp)).strftime('%Y-%m-%d')
+					temp['date'] = stamp
 					data_by_author.append(temp)
 				fgl.write(' %d' % lines_by_authors[author])
 				fgc.write(' %d' % commits_by_authors[author])
@@ -1040,7 +1051,14 @@ class HTMLReportCreator(ReportCreator):
 		fgc.close()
 
 		# push these two datasets
-		# print(json.dumps(data_by_author[0], indent = 4))
+		data_by_author_result = json.dumps(data_by_author, indent = 4)
+		domo_access_token = get_access_token(DOMO_DETAILS["client_id"], DOMO_DETAILS["client_secret"], DOMO_DETAILS["api_host"])
+		dataset_ids = list(get_datasets(DOMO_DETAILS, sys.argv[1:][0]))
+		if len(dataset_ids) == 0:
+			dataset_id = create_dataset(DOMO_DETAILS, sys.argv[1:][0])["id"]
+		else:
+			dataset_id = dataset_ids[0]
+		import_data(DOMO_DETAILS, dataset_id, data_by_author_result)
 		# print(data.authors)
 
 		# Authors :: Author of Month
@@ -1514,4 +1532,4 @@ class GitStats:
 
 if __name__=='__main__':
 	g = GitStats()
-	g.run(sys.argv[1:])
+	g.run(sys.argv[2:])
