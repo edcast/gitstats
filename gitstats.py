@@ -30,8 +30,8 @@ ON_LINUX = (platform.system() == 'Linux')
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
 DOMO_DETAILS = {
-	"client_id": "use_your_domo_client_id",
-	"client_secret": "use_your_domo_client_secret",
+	"client_id": os.environ['DOMO_CLIENT_ID'],
+	"client_secret": os.environ['DOMO_CLIENT_SECRET'],
 	"api_host": "api.domo.com"
 }
 
@@ -1052,13 +1052,20 @@ class HTMLReportCreator(ReportCreator):
 
 		# push these two datasets
 		data_by_author_result = json.dumps(data_by_author, indent = 4)
-		domo_access_token = get_access_token(DOMO_DETAILS["client_id"], DOMO_DETAILS["client_secret"], DOMO_DETAILS["api_host"])
-		dataset_ids = list(get_datasets(DOMO_DETAILS, sys.argv[1:][0]))
-		if len(dataset_ids) == 0:
-			dataset_id = create_dataset(DOMO_DETAILS, sys.argv[1:][0])["id"]
-		else:
-			dataset_id = dataset_ids[0]
-		import_data(DOMO_DETAILS, dataset_id, data_by_author_result)
+		retry_count = 0
+		while retry_count < 3:
+			try:
+				domo_access_token = get_access_token(DOMO_DETAILS["client_id"], DOMO_DETAILS["client_secret"], DOMO_DETAILS["api_host"])
+				dataset_ids = list(get_datasets(DOMO_DETAILS, sys.argv[1:][0]))
+				if len(dataset_ids) == 0:
+					dataset_id = create_dataset(DOMO_DETAILS, sys.argv[1:][0])["id"]
+				else:
+					dataset_id = dataset_ids[0]
+				import_data(DOMO_DETAILS, dataset_id, data_by_author_result)
+				break
+			except:
+				retry_count += 1
+				print("Retrying DOMO Data push")
 		# print(data.authors)
 
 		# Authors :: Author of Month
