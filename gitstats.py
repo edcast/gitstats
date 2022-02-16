@@ -30,8 +30,8 @@ ON_LINUX = (platform.system() == 'Linux')
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
 DOMO_DETAILS = {
-	"client_id": "use_your_domo_client_id",
-	"client_secret": "use_your_domo_client_secret",
+	"client_id": os.environ['DOMO_CLIENT_ID'],
+	"client_secret": os.environ['DOMO_CLIENT_SECRET'],
 	"api_host": "api.domo.com"
 }
 
@@ -125,8 +125,8 @@ def getversion():
 def getgitversion():
 	return getpipeoutput(['git --version']).split('\n')[0]
 
-def getgnuplotversion():
-	return getpipeoutput(['%s --version' % gnuplot_cmd]).split('\n')[0]
+# def getgnuplotversion():
+# 	return getpipeoutput(['%s --version' % gnuplot_cmd]).split('\n')[0]
 
 def getnumoffilesfromrev(time_rev):
 	"""
@@ -782,7 +782,7 @@ class HTMLReportCreator(ReportCreator):
 		f.write('<dl>')
 		f.write('<dt>Project name</dt><dd>%s</dd>' % (data.projectname))
 		f.write('<dt>Generated</dt><dd>%s (in %d seconds)</dd>' % (datetime.datetime.now().strftime(format), time.time() - data.getStampCreated()))
-		f.write('<dt>Generator</dt><dd><a href="http://gitstats.sourceforge.net/">GitStats</a> (version %s), %s, %s</dd>' % (getversion(), getgitversion(), getgnuplotversion()))
+		# f.write('<dt>Generator</dt><dd><a href="http://gitstats.sourceforge.net/">GitStats</a> (version %s), %s, %s</dd>' % (getversion(), getgitversion(), getgnuplotversion()))
 		f.write('<dt>Report Period</dt><dd>%s to %s</dd>' % (data.getFirstCommitDate().strftime(format), data.getLastCommitDate().strftime(format)))
 		f.write('<dt>Age</dt><dd>%d days, %d active days (%3.2f%%)</dd>' % (data.getCommitDeltaDays(), len(data.getActiveDays()), (100.0 * len(data.getActiveDays()) / data.getCommitDeltaDays())))
 		f.write('<dt>Total Files</dt><dd>%s</dd>' % data.getTotalFiles())
@@ -1052,13 +1052,20 @@ class HTMLReportCreator(ReportCreator):
 
 		# push these two datasets
 		data_by_author_result = json.dumps(data_by_author, indent = 4)
-		domo_access_token = get_access_token(DOMO_DETAILS["client_id"], DOMO_DETAILS["client_secret"], DOMO_DETAILS["api_host"])
-		dataset_ids = list(get_datasets(DOMO_DETAILS, sys.argv[1:][0]))
-		if len(dataset_ids) == 0:
-			dataset_id = create_dataset(DOMO_DETAILS, sys.argv[1:][0])["id"]
-		else:
-			dataset_id = dataset_ids[0]
-		import_data(DOMO_DETAILS, dataset_id, data_by_author_result)
+		retry_count = 0
+		while retry_count < 3:
+			try:
+				domo_access_token = get_access_token(DOMO_DETAILS["client_id"], DOMO_DETAILS["client_secret"], DOMO_DETAILS["api_host"])
+				dataset_ids = list(get_datasets(DOMO_DETAILS, sys.argv[1:][0]))
+				if len(dataset_ids) == 0:
+					dataset_id = create_dataset(DOMO_DETAILS, sys.argv[1:][0])["id"]
+				else:
+					dataset_id = dataset_ids[0]
+				import_data(DOMO_DETAILS, dataset_id, data_by_author_result)
+				break
+			except:
+				retry_count += 1
+				print("Retrying DOMO Data push")
 		# print(data.authors)
 
 		# Authors :: Author of Month
@@ -1412,10 +1419,10 @@ plot """
 
 		os.chdir(path)
 		files = glob.glob(path + '/*.plot')
-		for f in files:
-			out = getpipeoutput([gnuplot_cmd + ' "%s"' % f])
-			if len(out) > 0:
-				print(out)
+		# for f in files:
+		# 	out = getpipeoutput([gnuplot_cmd + ' "%s"' % f])
+		# 	if len(out) > 0:
+		# 		print(out)
 
 	def printHeader(self, f, title = ''):
 		f.write(
@@ -1490,9 +1497,9 @@ class GitStats:
 			print('FATAL: Output path is not a directory or does not exist')
 			sys.exit(1)
 
-		if not getgnuplotversion():
-			print('gnuplot not found')
-			sys.exit(1)
+		# if not getgnuplotversion():
+		# 	print('gnuplot not found')
+		# 	sys.exit(1)
 
 		print('Output path: %s' % outputpath)
 		cachefile = os.path.join(outputpath, 'gitstats.cache')
@@ -1517,9 +1524,9 @@ class GitStats:
 
 		os.chdir(rundir)
 
-		print('Generating report...')
-		report = HTMLReportCreator()
-		report.create(data, outputpath)
+		# print('Generating report...')
+		# report = HTMLReportCreator()
+		# report.create(data, outputpath)
 
 		time_end = time.time()
 		exectime_internal = time_end - time_start
