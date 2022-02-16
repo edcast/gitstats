@@ -1,12 +1,8 @@
 FROM python:3.7-alpine
 
-RUN apk add g++
+RUN apk add g++ && apk add git
 
 WORKDIR /var/app/
-
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y git
 
 COPY requirements.txt /var/app/
 
