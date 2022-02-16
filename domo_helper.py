@@ -9,7 +9,7 @@ from pydomo.datasets import PolicyFilter, FilterOperator, PolicyType
 from requests.auth import HTTPBasicAuth
 
 def get_domo_client(client_id, client_secret, api_host):
-  return Domo(client_id, client_secret, api_host=api_host, use_https=True, request_timeout=60)
+  return Domo(client_id, client_secret, api_host=api_host, use_https=True, request_timeout=120)
 
 def get_access_token(client_id, client_secret, api_host):
   auth = HTTPBasicAuth(client_id, client_secret)
@@ -113,7 +113,7 @@ def remove_user_from_group(domo_client, args={}):
   exist, user_id = user_exist_in_group(domo_client, args['group_id'], args['user_id'])
   if exist:
     domo_client.groups.remove_user(args['group_id'], user_id)
-    print("User Removed from the Group!")  
+    print("User Removed from the Group!")
 
 def create_group(domo_client, name):
   exist, group_id = group_exist(domo_client, name)
