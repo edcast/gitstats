@@ -125,8 +125,8 @@ def getversion():
 def getgitversion():
 	return getpipeoutput(['git --version']).split('\n')[0]
 
-def getgnuplotversion():
-	return getpipeoutput(['%s --version' % gnuplot_cmd]).split('\n')[0]
+# def getgnuplotversion():
+# 	return getpipeoutput(['%s --version' % gnuplot_cmd]).split('\n')[0]
 
 def getnumoffilesfromrev(time_rev):
 	"""
@@ -782,7 +782,7 @@ class HTMLReportCreator(ReportCreator):
 		f.write('<dl>')
 		f.write('<dt>Project name</dt><dd>%s</dd>' % (data.projectname))
 		f.write('<dt>Generated</dt><dd>%s (in %d seconds)</dd>' % (datetime.datetime.now().strftime(format), time.time() - data.getStampCreated()))
-		f.write('<dt>Generator</dt><dd><a href="http://gitstats.sourceforge.net/">GitStats</a> (version %s), %s, %s</dd>' % (getversion(), getgitversion(), getgnuplotversion()))
+		# f.write('<dt>Generator</dt><dd><a href="http://gitstats.sourceforge.net/">GitStats</a> (version %s), %s, %s</dd>' % (getversion(), getgitversion(), getgnuplotversion()))
 		f.write('<dt>Report Period</dt><dd>%s to %s</dd>' % (data.getFirstCommitDate().strftime(format), data.getLastCommitDate().strftime(format)))
 		f.write('<dt>Age</dt><dd>%d days, %d active days (%3.2f%%)</dd>' % (data.getCommitDeltaDays(), len(data.getActiveDays()), (100.0 * len(data.getActiveDays()) / data.getCommitDeltaDays())))
 		f.write('<dt>Total Files</dt><dd>%s</dd>' % data.getTotalFiles())
@@ -1419,10 +1419,10 @@ plot """
 
 		os.chdir(path)
 		files = glob.glob(path + '/*.plot')
-		for f in files:
-			out = getpipeoutput([gnuplot_cmd + ' "%s"' % f])
-			if len(out) > 0:
-				print(out)
+		# for f in files:
+		# 	out = getpipeoutput([gnuplot_cmd + ' "%s"' % f])
+		# 	if len(out) > 0:
+		# 		print(out)
 
 	def printHeader(self, f, title = ''):
 		f.write(
@@ -1497,9 +1497,9 @@ class GitStats:
 			print('FATAL: Output path is not a directory or does not exist')
 			sys.exit(1)
 
-		if not getgnuplotversion():
-			print('gnuplot not found')
-			sys.exit(1)
+		# if not getgnuplotversion():
+		# 	print('gnuplot not found')
+		# 	sys.exit(1)
 
 		print('Output path: %s' % outputpath)
 		cachefile = os.path.join(outputpath, 'gitstats.cache')
@@ -1524,9 +1524,9 @@ class GitStats:
 
 		os.chdir(rundir)
 
-		print('Generating report...')
-		report = HTMLReportCreator()
-		report.create(data, outputpath)
+		# print('Generating report...')
+		# report = HTMLReportCreator()
+		# report.create(data, outputpath)
 
 		time_end = time.time()
 		exectime_internal = time_end - time_start
