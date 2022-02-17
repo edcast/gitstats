@@ -113,7 +113,7 @@ def remove_user_from_group(domo_client, args={}):
   exist, user_id = user_exist_in_group(domo_client, args['group_id'], args['user_id'])
   if exist:
     domo_client.groups.remove_user(args['group_id'], user_id)
-    print("User Removed from the Group!")  
+    print("User Removed from the Group!")
 
 def create_group(domo_client, name):
   exist, group_id = group_exist(domo_client, name)
@@ -199,6 +199,7 @@ def create_dataset(domo_client, name):
 
 def import_data(domo_client, dataset_id, payload):
   url = "https://{0}/v1/json/{1}/data".format(domo_client["api_host"], dataset_id)
+  print("Data ingestion in progress...")
   access_token = get_access_token(domo_client['client_id'], domo_client['client_secret'], domo_client['api_host'])
   headers = {
     'Content-Type': 'application/json',

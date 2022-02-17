@@ -1057,7 +1057,10 @@ class HTMLReportCreator(ReportCreator):
 			try:
 				domo_access_token = get_access_token(DOMO_DETAILS["client_id"], DOMO_DETAILS["client_secret"], DOMO_DETAILS["api_host"])
 				dataset_ids = list(get_datasets(DOMO_DETAILS, sys.argv[1:][0]))
+				print("Fetching dataset ids...")
+				print(dataset_ids)
 				if len(dataset_ids) == 0:
+					print("Creating new dataset...")
 					dataset_id = create_dataset(DOMO_DETAILS, sys.argv[1:][0])["id"]
 				else:
 					dataset_id = dataset_ids[0]
@@ -1217,7 +1220,7 @@ class HTMLReportCreator(ReportCreator):
 		f.write('</body></html>')
 		f.close()
 
-		self.createGraphs(path)
+		# self.createGraphs(path)
 
 	def createGraphs(self, path):
 		print('Generating graphs...')
@@ -1524,9 +1527,9 @@ class GitStats:
 
 		os.chdir(rundir)
 
-		# print('Generating report...')
-		# report = HTMLReportCreator()
-		# report.create(data, outputpath)
+		print('Generating report...')
+		report = HTMLReportCreator()
+		report.create(data, outputpath)
 
 		time_end = time.time()
 		exectime_internal = time_end - time_start
