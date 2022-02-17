@@ -34,6 +34,9 @@ DOMO_DETAILS = {
 	"client_secret": os.environ['DOMO_CLIENT_SECRET'],
 	"api_host": "api.domo.com"
 }
+print("------------------")
+print(DOMO_DETAILS["client_id"])
+print(DOMO_DETAILS["client_secret"])
 
 exectime_internal = 0.0
 exectime_external = 0.0
